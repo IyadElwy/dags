@@ -221,4 +221,4 @@ logger.info(f"{unique_id}-movie-loading: Movie loaded successfully: {movie.Title
 
 
 with open("/airflow/xcom/return.json", "w") as f:
-    json.dump({"file_prefix": unique_id}, f)
+    json.dump(unique_id, f)
