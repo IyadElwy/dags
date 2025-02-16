@@ -1,5 +1,6 @@
 import argparse
 import io
+import json
 import logging
 import os
 import sys
@@ -11,7 +12,6 @@ import requests
 from loki_logger_handler.loki_logger_handler import LokiLoggerHandler
 from minio import Minio
 from pydantic import BaseModel
-from requests.auth import HTTPBasicAuth
 
 config = dict(os.environ)
 
@@ -219,10 +219,6 @@ except Exception as e:
 
 logger.info(f"{unique_id}-movie-loading: Movie loaded successfully: {movie.Title}")
 
-res = requests.post(
-    "http://airflow-webserver.airflow.svc.cluster.local:8080/api/v1/dags/movie_cleaner_dag/dagRuns",
-    headers={"Content-Type": "application/json"},
-    json={"conf": {"file_prefix": unique_id}},
-    auth=HTTPBasicAuth(config["AIRFLOW_USER"], config["AIRFLOW_PASSWORD"]),
-)
-res.raise_for_status()
+
+with open("/airflow/xcom/return.json") as f:
+    f.write(json.dump({"file_prefix": unique_id}))
