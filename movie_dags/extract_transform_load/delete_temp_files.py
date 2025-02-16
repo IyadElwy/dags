@@ -23,6 +23,8 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("-f", "--file_prefix")
 args = parser.parse_args()
+print(args)
+print(args.file_prefix)
 if not args.file_prefix:
     logger.error("File prefix id for deletion not specified")
     raise Exception("File prefix id for deletion not specified")
@@ -37,6 +39,7 @@ minio_client = Minio(
 
 unique_id = args.file_prefix
 for obj in [f"{unique_id}-extracted.json", f"{unique_id}-transformed.json"]:
+    print(obj)
     minio_client.remove_object(
         bucket_name="temp-dag",
         object_name=obj,
