@@ -1,0 +1,30 @@
+name: Build and push changes
+run-name: Build and push changes from commit ${{ github.event.head_commit.message }}
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-push-api:
+    name: Build and Push Docker Image for Movie Dags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: iyadelwy/movie-extract_transform_load-image:latest
+          context: "{{defaultContext}}:movie_dags/extract_transform_load"
+          build-args: |
+            AIRFLOW_USER=${{ secrets.AIRFLOW_USER }}
+            AIRFLOW_PASSWORD=${{ secrets.AIRFLOW_PASSWORD }}
+            API_KEY=${{ secrets.API_KEY }}
+            MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
+            MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}

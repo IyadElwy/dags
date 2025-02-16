@@ -1,6 +1,22 @@
 FROM python:3.12-bookworm
 
-RUN ["pip", "install", "requests", "python-dotenv", "loki-logger-handler", "pydantic", "psycopg2"]
+ARG API_KEY
+ENV API_KEY ${API_KEY}
+
+ARG AIRFLOW_USER
+ENV AIRFLOW_USER ${AIRFLOW_USER}
+
+ARG AIRFLOW_PASSWORD
+ENV AIRFLOW_PASSWORD ${AIRFLOW_PASSWORD}
+
+ARG MINIO_ACCESS_KEY
+ENV MINIO_ACCESS_KEY ${MINIO_ACCESS_KEY}
+
+ARG MINIO_SECRET_KEY
+ENV MINIO_SECRET_KEY ${MINIO_SECRET_KEY}
+
+
+RUN ["pip", "install", "requests", "python-dotenv", "loki-logger-handler", "pydantic", "psycopg2", "minio"]
 
 WORKDIR /app
 

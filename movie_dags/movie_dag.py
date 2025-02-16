@@ -2,7 +2,6 @@ import datetime
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from kubernetes.client import models as k8s
 
 with DAG(
     dag_id="movie_retriever_dag",
@@ -21,19 +20,19 @@ with DAG(
         arguments=[
             "-t \"{{ dag_run.conf['title'] }}\"",
         ],
-        volume_mounts=[
-            k8s.V1VolumeMount(
-                name="movie-processing-temp-volume", mount_path="/app/temp_data"
-            )
+    )
+
+    clean_up_pod = KubernetesPodOperator(
+        task_id="clean-up-temp-directory",
+        namespace="portfolio",
+        image="iyadelwy/movie-extract_transform_load-image:latest",
+        cmds=[
+            "python",
+            "./delete_temp_files.py",
         ],
-        volumes=[
-            k8s.V1Volume(
-                name="movie-processing-temp-volume",
-                persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(
-                    claim_name="movie-processing-temp-pvc"
-                ),
-            ),
+        arguments=[
+            "-f \"{{ dag_run.conf['file_prefix'] }}\"",
         ],
     )
 
-    extraction_pod
+    extraction_pod >> clean_up_pod

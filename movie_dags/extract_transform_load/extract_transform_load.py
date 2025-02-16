@@ -1,19 +1,26 @@
 import argparse
-import json
+import io
 import logging
+import os
 import sys
 import uuid
 from urllib.parse import quote
 
 import psycopg2
 import requests
-from dotenv import dotenv_values
 from loki_logger_handler.loki_logger_handler import LokiLoggerHandler
+from minio import Minio
 from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
 
-config = dotenv_values(".env")
+config = dict(os.environ)
 
+minio_client = Minio(
+    "minio.minio.svc.cluster.local:9000",
+    secure=False,
+    access_key=config["MINIO_ACCESS_KEY"],
+    secret_key=config["MINIO_SECRET_KEY"],
+)
 
 logger = logging.getLogger("dag-logger")
 logger.setLevel(logging.DEBUG)
@@ -66,9 +73,15 @@ logger.info(
     f"{unique_id}-movie-extraction: Movie data retrieved successfully: {args.title}"
 )
 file_name = f"{unique_id}-extracted.json"
+
 try:
-    with open(f"/app/temp_data/{file_name}", "w+") as f:
-        json.dump(response.json(), f)
+    content_bytesio = io.BytesIO(response.content)
+    put_res = minio_client.put_object(
+        bucket_name="temp-dag",
+        object_name=file_name,
+        data=content_bytesio,
+        length=content_bytesio.getbuffer().nbytes,
+    )
 except Exception as e:
     logger.critical(
         f"{unique_id}-movie-extraction: Error saving data: {e}", exc_info=True
@@ -108,9 +121,12 @@ class Movie(BaseModel):
 
 
 try:
-    with open(f"/app/temp_data/{unique_id}-extracted.json", "r") as f:
-        json_data = json.load(f)
-        movie = Movie(**json_data)
+    file_response = minio_client.get_object(
+        bucket_name="temp-dag",
+        object_name=f"{unique_id}-extracted.json",
+    )
+    json_data = file_response.json()
+    movie = Movie(**json_data)
 except Exception as e:
     logger.critical(
         f"{unique_id}-movie-transformation: Error transforming data: {e}", exc_info=True
@@ -121,8 +137,13 @@ logger.info(f"{unique_id}-movie-transformation: Movie transformed successfully")
 
 try:
     file_name = f"{unique_id}-transformed.json"
-    with open(f"/app/temp_data/{file_name}", "w+") as f:
-        f.write(movie.model_dump_json())
+    content_bytesio = io.BytesIO(bytearray(movie.model_dump_json(), encoding="utf-8"))
+    minio_client.put_object(
+        bucket_name="temp-dag",
+        object_name=file_name,
+        data=content_bytesio,
+        length=content_bytesio.getbuffer().nbytes,
+    )
 except Exception as e:
     logger.critical(
         f"{unique_id}-movie-transformation: Error saving data: {e}", exc_info=True
@@ -147,9 +168,12 @@ logger.info(f"{unique_id}-movie-loading: Task started")
 
 
 try:
-    with open(f"/app/temp_data/{unique_id}-transformed.json", "r") as f:
-        json_data = json.load(f)
-        movie = Movie(**json_data)
+    file_response = minio_client.get_object(
+        bucket_name="temp-dag",
+        object_name=f"{unique_id}-transformed.json",
+    )
+    json_data = file_response.json()
+    movie = Movie(**json_data)
 except Exception as e:
     logger.critical(
         f"{unique_id}-movie-loading: Error decoding data: {e}", exc_info=True
