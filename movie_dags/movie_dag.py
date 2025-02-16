@@ -32,7 +32,7 @@ with DAG(
             "./delete_temp_files.py",
         ],
         arguments=[
-            "-f \"{{ ti.xcom_pull(task_ids='movie-extract-transform-load', key='return_value') }}\"",
+            "-f {{ ti.xcom_pull(task_ids='movie-extract-transform-load', key='return_value') }}",
         ],
     )
 
