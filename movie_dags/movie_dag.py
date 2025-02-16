@@ -13,6 +13,7 @@ with DAG(
         namespace="portfolio",
         image="iyadelwy/movie-extract_transform_load-image:latest",
         name="movie-extract-transform-load-pod",
+        do_xcom_push=True,
         cmds=[
             "python",
             "./extract_transform_load.py",
