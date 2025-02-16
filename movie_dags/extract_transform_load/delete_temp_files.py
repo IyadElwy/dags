@@ -40,7 +40,8 @@ minio_client = Minio(
 unique_id = args.file_prefix
 for obj in [f"{unique_id}-extracted.json", f"{unique_id}-transformed.json"]:
     print(obj)
-    minio_client.remove_object(
+    res = minio_client.remove_object(
         bucket_name="temp-dag",
         object_name=obj,
     )
+    print(res)
