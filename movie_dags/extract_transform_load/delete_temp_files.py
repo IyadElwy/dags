@@ -30,6 +30,7 @@ if not args.file_prefix:
     raise Exception("File prefix id for deletion not specified")
 
 config = dict(os.environ)
+print(config)
 minio_client = Minio(
     "minio.minio.svc.cluster.local:9000",
     secure=False,
