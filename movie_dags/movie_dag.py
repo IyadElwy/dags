@@ -7,7 +7,7 @@ with DAG(
     dag_id="movie_retriever_dag",
     start_date=datetime.datetime(2025, 1, 4),
     catchup=False,
-    schedule=False
+    schedule_interval=None
 ):
     extraction_pod = KubernetesPodOperator(
         task_id="movie-extract-transform-load",
